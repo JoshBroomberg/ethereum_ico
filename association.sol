@@ -33,10 +33,17 @@ contract Token {
 }
 
 contract Association is owned, etherRecipient {
-  // Proposals.
+  // Proposals state values
   Proposal[] public proposals;
   uint256 public numProposals;
+
+  // Voting state values.
+  Token public sharesToken;
+  uint256 public debateTimeInMinutes;
+  uint256 public minimumQuorum;
   
+  // Structs
+
   struct Proposal {
     // Identifiers.
     address recipient;
@@ -60,11 +67,6 @@ contract Association is owned, etherRecipient {
     address voter;
     bool supportsProposal;
   }
-  
-  // Voting rules.
-  Token public sharesToken;
-  uint256 public debateTimeInMinutes;
-  uint256 public minimumQuorum;
 
   // Modifiers
   modifier onlyShareholders {
@@ -78,6 +80,7 @@ contract Association is owned, etherRecipient {
   event Voted(address voter, uint proposalID, bool supported);
   event ChangeOfRules(address sharesAddress, uint256 debateTimeInMinutes, uint256 minimumQuorum);
   
+  // Constructor
   function Association(
     Token sharesAddress,
     uint256 debateTimeInMinutes,
@@ -86,16 +89,21 @@ contract Association is owned, etherRecipient {
     changeVotingRules(sharesAddress, debateTimeInMinutes, minimumSharesToPassVote);
   }
 
+  // TODO: create mechanism for these changes to be altered
+  // via a proposal mechanism.
   function changeVotingRules (
     Token sharesAddress,
     uint256 debateTimeInMinutes,
     uint256 minimumSharesToPassVote
     ) onlyOwner {
     
+    // NOTE: new Token contract at new address.
     sharesToken = Token(sharesAddress);
     if (minimumSharesToPassVote <= 0) minimumSharesToPassVote = 1;
     debateTimeInMinutes = debateTimeInMinutes;
     minimumQuorum = minimumSharesToPassVote;
+
+    // Fire event.
     ChangeOfRules(sharesAddress, debateTimeInMinutes, minimumQuorum);
   }
 
@@ -121,7 +129,7 @@ contract Association is owned, etherRecipient {
     p.numVotes = 0;
     p.votingDeadline = now + (debateTimeInMinutes * 1 minutes);
 
-    // Track proposal
+    // Track and fire events.
     ProposalMade(recipient, amount, description);
     numProposals = proposalID + 1;
 
@@ -149,15 +157,14 @@ contract Association is owned, etherRecipient {
 
     Proposal p = proposals[proposalID];
     
-    // Validate vote possible
+    // Validate vote allowed
     if (
       p.voted[msg.sender] == true
       || p.finalized == true
     ) throw;
     
-    // Vote
     voteID = p.votes.length++;
-    // Notice different format of struct creation.
+    // NOTE: notice different format of struct creation.
     p.votes[voteID] = Vote({voter: msg.sender, supportsProposal: supportsProposal});
 
     // Track vote
@@ -175,7 +182,7 @@ contract Association is owned, etherRecipient {
   returns (bool executed) {
     Proposal p = proposals[proposalID];
 
-    // Verify execution should happen
+    // Verify execution allowed
     if (
       now < p.votingDeadline
       || p.executed
@@ -196,7 +203,7 @@ contract Association is owned, etherRecipient {
       }
     }
 
-    // determine result;
+    // Determine result
     p.finalized = true;
     if (yesVotes + noVotes < minimumQuorum) {
       if (yesVotes > noVotes) {
