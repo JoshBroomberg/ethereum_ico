@@ -27,6 +27,189 @@ contract etherRecipient {
 
 }
 
-contract Association is owned, etherRecipient {
+contract Token {
+  mapping (address => uint256) public balanceOf;
+  function transferFrom(address to, address from, uint amount) returns (bool success);   
+}
 
+contract Association is owned, etherRecipient {
+  // Proposals.
+  Proposal[] public proposals;
+  uint256 public numProposals;
+  
+  struct Proposal {
+    // Identifiers.
+    address recipient;
+    uint256 amount;
+    string description;
+    bytes32 proposalHash;
+
+    // Voting.
+    Vote[] votes;
+    uint256 numVotes; 
+    uint votingDeadline;
+    mapping (address => bool) voted;
+
+    // Results.
+    bool finalized;
+    bool passed;
+    bool executed;
+  }
+
+  struct Vote {
+    address voter;
+    bool supportsProposal;
+  }
+  
+  // Voting rules.
+  Token public sharesToken;
+  uint256 public debateTimeInMinutes;
+  uint256 public minimumQuorum;
+
+  // Modifiers
+  modifier onlyShareholders {
+    if (sharesToken.balanceOf(msg.sender) == 0) throw;
+    _;
+  }
+
+  // Events
+  event ProposalMade(address recipient, uint256 amount, string description);
+  event ProposalTallied(uint proposalID, bool finalized, bool passed, bool executed);
+  event Voted(address voter, uint proposalID, bool supported);
+  event ChangeOfRules(address sharesAddress, uint256 debateTimeInMinutes, uint256 minimumQuorum);
+  
+  function Association(
+    Token sharesAddress,
+    uint256 debateTimeInMinutes,
+    uint256 minimumSharesToPassVote
+    ) {
+    changeVotingRules(sharesAddress, debateTimeInMinutes, minimumSharesToPassVote);
+  }
+
+  function changeVotingRules (
+    Token sharesAddress,
+    uint256 debateTimeInMinutes,
+    uint256 minimumSharesToPassVote
+    ) onlyOwner {
+    
+    sharesToken = Token(sharesAddress);
+    if (minimumSharesToPassVote <= 0) minimumSharesToPassVote = 1;
+    debateTimeInMinutes = debateTimeInMinutes;
+    minimumQuorum = minimumSharesToPassVote;
+    ChangeOfRules(sharesAddress, debateTimeInMinutes, minimumQuorum);
+  }
+
+  function newProposal(
+      address recipient,
+      uint256 amount,
+      string description,
+      bytes transactionByteCode
+    )
+    onlyShareholders
+    returns (uint proposalID) {
+
+    // Create proposal
+    proposalID = proposals.length++;
+    Proposal p = proposals[proposalID];
+    p.recipient = recipient;
+    p.amount = amount;
+    p.description = description;
+    p.proposalHash = sha3(recipient, amount, transactionByteCode);
+    p.finalized = false;
+    p.executed = false;
+    p.passed = false;
+    p.numVotes = 0;
+    p.votingDeadline = now + (debateTimeInMinutes * 1 minutes);
+
+    // Track proposal
+    ProposalMade(recipient, amount, description);
+    numProposals = proposalID + 1;
+
+    return proposalID;
+  }
+
+  function validateProposal(
+      uint proposalID,
+      address recipient,
+      uint256 amount,
+      bytes transactionByteCode
+    )
+    constant
+    returns (bool valid) {
+      Proposal p = proposals[proposalID];
+      return (p.proposalHash == sha3(recipient, amount, transactionByteCode));
+  }
+
+  function vote(
+    uint proposalID,
+    bool supportsProposal
+    )
+    onlyShareholders
+    returns (uint voteID) {
+
+    Proposal p = proposals[proposalID];
+    
+    // Validate vote possible
+    if (
+      p.voted[msg.sender] == true
+      || p.finalized == true
+    ) throw;
+    
+    // Vote
+    voteID = p.votes.length++;
+    // Notice different format of struct creation.
+    p.votes[voteID] = Vote({voter: msg.sender, supportsProposal: supportsProposal});
+
+    // Track vote
+    p.voted[msg.sender] = true;
+    p.numVotes = voteID + 1;
+    Voted(msg.sender, proposalID, supportsProposal);
+    return voteID;
+  }
+
+  function executeProposal(
+      uint proposalID,
+      bytes transactionByteCode
+    )
+  onlyShareholders 
+  returns (bool executed) {
+    Proposal p = proposals[proposalID];
+
+    // Verify execution should happen
+    if (
+      now < p.votingDeadline
+      || p.executed
+      || p.proposalHash != sha3(p.recipient, p.amount, transactionByteCode)
+      ) throw;
+
+    // Tally votes
+    uint yesVotes = 0;
+    uint noVotes = 0;
+
+    for(uint i = 0; i < p.votes.length; ++i) {
+      Vote v = p.votes[i];
+      uint weight = sharesToken.balanceOf(v.voter);
+      if(v.supportsProposal == true) {
+        yesVotes += weight;
+      } else {
+        noVotes += weight;
+      }
+    }
+
+    // determine result;
+    p.finalized = true;
+    if (yesVotes + noVotes < minimumQuorum) {
+      if (yesVotes > noVotes) {
+        p.passed = true;
+
+        // NOTE: explain the transaction bytes in this?
+        if (p.recipient.call.value(p.amount * 1 ether)(transactionByteCode)){
+          p.executed = true;
+        }
+      }
+    }
+
+    ProposalTallied(proposalID, p.finalized, p.passed, p.executed);
+    return p.executed;
+  }
 }
