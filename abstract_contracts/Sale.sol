@@ -6,12 +6,12 @@ contract Sale {
   uint public fundingGoal;
   uint public deadline;
   uint public pricePerToken;
-  Token public rewardToken;
+  AbstractToken public rewardToken;
 
   modifier afterDeadline()
 
   // Tracking variables
-  mapping(address => uint256) public contributionOf; 
+  mapping(address => uint256) public contributionOf;
   uint public amountRaised;
   bool fundingGoalReached = false;
   bool crowdsaleClosed = false;
@@ -23,10 +23,10 @@ contract Sale {
     uint _etherCostPerToken,
     address _rewardTokenAddress)
 
-  // This function is called when the contract is paid ether.
-  function () payable
+  function participate() payable
 
   function checkGoalReached() afterDeadline
 
   function withdraw() afterDeadline
 }
+
