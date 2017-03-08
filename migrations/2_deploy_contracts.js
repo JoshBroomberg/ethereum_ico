@@ -15,7 +15,7 @@ module.exports = function(deployer) {
       deployer.deploy(Sale,
                       Association.address, // beneficiary
                       1000, // funding goal in Ether
-                      24 * 30 * 60, // debate duration (month)
+                      1, // duration in minutes. Set to 1 for demo.
                       1, // Ether cost per token
                       Token.address // Reward token address
                     ).then(function () {
