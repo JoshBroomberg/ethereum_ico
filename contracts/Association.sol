@@ -77,7 +77,7 @@ contract Association is owned {
   AbstractToken public sharesToken;
   uint256 public debateTimeInMinutes;
   uint256 public minimumQuorum;
-  
+
   // Structs
   struct Proposal {
     // Identifiers.
@@ -88,7 +88,7 @@ contract Association is owned {
 
     // Voting.
     Vote[] votes;
-    uint256 numVotes; 
+    uint256 numVotes;
     uint votingDeadline;
     mapping (address => bool) voted;
 
@@ -116,14 +116,14 @@ contract Association is owned {
   event Voted(address voter, uint proposalID, bool supported);
   event ChangeOfRules(address sharesAddress, uint256 debateTimeInMinutes, uint256 minimumQuorum);
   event ReceivedEther(address from, uint256 amount);
-  
+
   // Constructor
   function Association(
-    AbstractToken sharesAddress,
-    uint256 debateTimeInMinutes,
-    uint256 minimumSharesToPassVote)
+    address sharesAddress,
+    uint256 _debateTimeInMinutes,
+    uint256 _minimumSharesToPassVote)
   {
-    changeVotingRules(sharesAddress, debateTimeInMinutes, minimumSharesToPassVote);
+    changeVotingRules(sharesAddress, _debateTimeInMinutes, _minimumSharesToPassVote);
   }
 
   // TODO: create mechanism for these changes to be altered
@@ -131,17 +131,17 @@ contract Association is owned {
   // This function will still be used, but the contract's owner will change.
   // This is how ethereum can be made dynamic.
   function changeVotingRules(
-      AbstractToken sharesAddress,
-      uint256 debateTimeInMinutes,
-      uint256 minimumSharesToPassVote)
+      address sharesAddress,
+      uint256 _debateTimeInMinutes,
+      uint256 _minimumSharesToPassVote)
     onlyOwner
-  { 
+  {
     // A contract instance is created using the AbstractToken's ABI (Application Binary Interface)
     // Calls to this object go to the contract at the address provided.
     sharesToken = AbstractToken(sharesAddress);
-    if (minimumSharesToPassVote <= 0) minimumSharesToPassVote = 1;
-    debateTimeInMinutes = debateTimeInMinutes;
-    minimumQuorum = minimumSharesToPassVote;
+    if (_minimumSharesToPassVote <= 0) _minimumSharesToPassVote = 1;
+    debateTimeInMinutes = _debateTimeInMinutes;
+    minimumQuorum = _minimumSharesToPassVote;
 
     // Fire event.
     ChangeOfRules(sharesAddress, debateTimeInMinutes, minimumQuorum);
@@ -167,7 +167,7 @@ contract Association is owned {
     // the code is resupplied and validated at proposal execution time.
     // This saves on storage.
     p.proposalHash = sha3(recipient, amount, transactionByteCode);
-    
+
     // Technically, these are not necessary because the default is false.
     p.finalized = false;
     p.executed = false;
@@ -202,13 +202,13 @@ contract Association is owned {
   {
 
     Proposal p = proposals[proposalID];
-    
+
     // Validate vote allowed
     if (
       p.voted[msg.sender] == true
       || p.finalized == true
     ) throw;
-    
+
     voteID = p.votes.length++;
     // NOTE: notice different format of struct creation.
     p.votes[voteID] = Vote({voter: msg.sender, supportsProposal: supportsProposal});
@@ -258,21 +258,21 @@ contract Association is owned {
     returns (bool proposalExecuted)
   {
     Proposal p = proposals[proposalID];
-    
+
     if (!(p.finalized && p.passed)) throw;
-    
+
     // This is a confusing line of code. Call is used to call another function via its byte-encoded signature.
     // call.value returns the call function, but, when used, it will send ether with the call.
     // We then supply the byte code to be executed.
 
     // To execute, the function called will have to be payable. If we want to just pay, we would use bytecode: 0x.
 
-    // Call will mean that this contract is the message sender. The function called must be accessible to 
+    // Call will mean that this contract is the message sender. The function called must be accessible to
     // this contract.
     if (p.recipient.call.value(p.amount * 1 ether)(transactionByteCode)){
       p.executed = true;
     }
-    
+
     ProposalExecuted(proposalID, p.passed, p.executed);
     return p.executed;
   }

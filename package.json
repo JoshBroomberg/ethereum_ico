@@ -1,0 +1,24 @@
+{
+  "name": "ethereum_ico",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoshBroomberg/ethereum_ico.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JoshBroomberg/ethereum_ico/issues"
+  },
+  "homepage": "https://github.com/JoshBroomberg/ethereum_ico#readme",
+  "dependencies": {
+    "fs-readfile-promise": "^3.0.0",
+    "truffle": "^3.1.2",
+    "web3": "^0.18.2"
+  }
+}
