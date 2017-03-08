@@ -106,10 +106,14 @@ contract Sale {
     amountRaised += amount;
 
     // Send correct amount of tokens to the contributor.
-    rewardToken.mint(msg.sender, amount / pricePerToken);
+    if (!rewardToken.mint(msg.sender, amount / pricePerToken)) {
+      throw;
+    }
 
     // Refund any ether not used to purchase whole tokens.
-    msg.sender.send(amount % pricePerToken);
+    if (!msg.sender.send(amount % pricePerToken)) {
+      throw;
+    }
 
     FundsReceived(msg.sender, amount);
   }

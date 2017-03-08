@@ -1,14 +1,14 @@
 pragma solidity ^0.4.6;
 
 contract Token {
-  // Token details 
+  // Token details
   string public standard = "Token 0.1";
   string public name;
   string public symbol;
   uint8 public decimals;
   uint256 public totalSupply;
   address public mintController;
-  
+
   // Tracking balances
   mapping (address => uint256) public balanceOf;
 
@@ -36,8 +36,8 @@ contract Token {
     // Check overflow.
     if(balanceOf[recipient] + amount < balanceOf[recipient]) throw;
 
-    balanceOf[recipient] += amount;
-    
+    balanceOf[recipient] += amount * 100000000; // In case decimals == 8
+
     Mint(recipient, amount);
     return true;
   }
@@ -61,4 +61,4 @@ contract Token {
   function () {
     throw;
   }
-} 
+}
