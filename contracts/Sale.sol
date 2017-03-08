@@ -60,7 +60,7 @@ contract Sale {
     if (now < deadline) throw;
     _;
   }
-  
+
   // Tracking variables
   mapping(address => uint256) public contributionOf; // Track contributors
   uint public amountRaised; //defaults to 0.
@@ -71,19 +71,19 @@ contract Sale {
   event GoalReached(address beneficiary, uint amountRaised);
   event FundsReceived(address backer, uint amount);
   event FundsWithdrawal(address recipient, uint amount);
-  
-  function Crowdsale(
-    address beneficiary,
-    uint fundingGoalInEthers,
-    uint durationInMinutes,
-    uint etherCostPerToken,
-    AbstractToken rewardTokenAddress)
+
+  function Sale(
+    address _beneficiary,
+    uint _fundingGoalInEthers,
+    uint _durationInMinutes,
+    uint _etherCostPerToken,
+    address _rewardTokenAddress)
   {
-    beneficiary = beneficiary;
-    fundingGoal = fundingGoalInEthers * 1 ether;
-    deadline = now + durationInMinutes * 1 minutes;
-    pricePerToken = etherCostPerToken * 1 ether;
-    rewardToken = AbstractToken(rewardTokenAddress);
+    beneficiary = _beneficiary;
+    fundingGoal = _fundingGoalInEthers * 1 ether;
+    deadline = now + _durationInMinutes * 1 minutes;
+    pricePerToken = _etherCostPerToken * 1 ether;
+    rewardToken = AbstractToken(_rewardTokenAddress);
   }
 
   // This function is called when the contract is paid ether.
@@ -129,7 +129,7 @@ contract Sale {
     // Contributor withdrawing funds.
     if (!fundingGoalReached) {
       uint amount = contributionOf[msg.sender];
-      
+
       if (amount > 0 && msg.sender.send(amount)) {
         FundsWithdrawal(msg.sender, amount);
         // NOTE: is this ok? Before, it was set to zero before the send, and then
@@ -148,6 +148,6 @@ contract Sale {
         // If the send fails, unlock funders' balances
         fundingGoalReached = false;
       }
-    }  
+    }
   }
 }
