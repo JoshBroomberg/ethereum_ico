@@ -24,6 +24,13 @@ contract AbstractToken {
   /// @return Whether the transfer was successful or not
   function transfer(address _to, uint256 _value) returns (bool success);
 
+  /* Custom Function */
+  /// @notice create `_amount` of tokens and credit them to `_recipient`
+  /// @param _recipient The address of the recipient
+  /// @param _amount The amount of token to be created
+  /// @return Whether the minting was successful or not
+  function mint(address _recipient, uint256 _amount) returns (bool success);
+
   /// @notice send `_value` token to `_to` from `_from` on the condition it is approved by `_from`
   /// @param _from The address of the sender
   /// @param _to The address of the recipient
@@ -99,8 +106,11 @@ contract Sale {
     amountRaised += amount;
 
     // Send correct amount of tokens to the contributor.
-    // NOTE: Is this integer division?
-    rewardToken.transfer(msg.sender, amount / pricePerToken);
+    rewardToken.mint(msg.sender, amount / pricePerToken);
+
+    // Refund any ether not used to purchase whole tokens.
+    msg.sender.send(amount % pricePerToken);
+
     FundsReceived(msg.sender, amount);
   }
 
