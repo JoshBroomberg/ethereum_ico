@@ -1,11 +1,11 @@
 pragma solidity ^0.4.6;
+import "./owned.sol";
 
-contract Token {
+contract Token is owned {
   // Token details
-  string public standard = "Token 0.1";
-  string public name;
-  string public symbol;
-  uint8 public decimals;
+  string public name = "Etherion Share";
+  string public symbol = "ETS";
+  uint8 public decimals = 0;
   uint256 public totalSupply;
   address public mintController;
 
@@ -17,18 +17,10 @@ contract Token {
   event Transfer(address indexed from, address indexed to, uint256 amount);
 
   function Token(
-      string name,
-      string symbol,
-      uint8 decimals,
-      uint256 initialSupply,
-      address mintController)
+      uint256 initialSupply)
   {
     balanceOf[msg.sender] = initialSupply;
     totalSupply = initialSupply;
-    name = name;
-    symbol = symbol;
-    decimals = decimals;
-    mintController = mintController;
     Mint(msg.sender, initialSupply);
   }
 
@@ -36,10 +28,14 @@ contract Token {
     // Check overflow.
     if(balanceOf[recipient] + amount < balanceOf[recipient]) throw;
 
-    balanceOf[recipient] += amount * 100000000; // In case decimals == 8
+    balanceOf[recipient] += amount; // In case decimals == 8
 
     Mint(recipient, amount);
     return true;
+  }
+
+  function changeMinter(address newMinter) onlyOwner {
+    mintController = newMinter;
   }
 
   function transfer(address to, uint256 amount) returns (bool success)

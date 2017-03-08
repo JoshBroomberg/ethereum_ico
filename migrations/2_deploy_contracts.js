@@ -3,9 +3,26 @@ var Association = artifacts.require("./Association.sol");
 var Sale = artifacts.require("./Sale.sol");
 
 module.exports = function(deployer) {
-  deployer.deploy(Token, "Token", "TKN", 8, 10000000000000).then(function () {
-    deployer.deploy(Association, Token.address, 10080, 20000).then(function() {
-      deployer.deploy(Sale, web3.eth.accounts[0], 200, 43200, 1, Token.address);
+  var numberOfShares = 10000
+  deployer.deploy(Token,
+                  numberOfShares // Initial supply
+                 ).then(function () {
+    deployer.deploy(Association,
+                    Token.address, // Shared distribution
+                    10080, // debateTimeInMinutes
+                    numberOfShares * 0.5 // minimumQuorum
+                  ).then(function() {
+      deployer.deploy(Sale,
+                      Association.address, // beneficiary
+                      1000, // funding goal in Ether
+                      24 * 30 * 60, // debate duration (month)
+                      1, // Ether cost per token
+                      Token.address // Reward token address
+                    ).then(function () {
+                      return Token.deployed();
+                    }).then(function(instance) {
+                      return instance.changeMinter(Sale.address);
+                    });
     });
   });
 };

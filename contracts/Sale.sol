@@ -106,6 +106,7 @@ contract Sale {
     amountRaised += amount;
 
     // Send correct amount of tokens to the contributor.
+
     if (!rewardToken.mint(msg.sender, amount / pricePerToken)) {
       throw;
     }

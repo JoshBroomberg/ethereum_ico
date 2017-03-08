@@ -1,22 +1,5 @@
 pragma solidity ^0.4.6;
-
-// Define abstract utility contracts.
-contract owned {
-  address public owner;
-
-  function owned() {
-    owner = msg.sender;
-  }
-
-  modifier onlyOwner(){
-    if (msg.sender != owner) throw;
-    _;
-  }
-
-  function transferOwnership(address to) onlyOwner {
-    owner = to;
-  }
-}
+import "./owned.sol";
 
 // From: https://github.com/ConsenSys/Tokens/blob/master/Token_Contracts/contracts/Token.sol
 contract AbstractToken {
