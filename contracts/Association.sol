@@ -265,7 +265,8 @@ contract Association is owned {
     // call.value returns the call function, but, when used, it will send ether with the call.
     // We then supply the byte code to be executed.
 
-    // To execute, the function called will have to be payable. If we want to just pay, we would use bytecode: 0x.
+    // To execute, the function called will have to be payable. If we want to just pay, we would use bytecode: 0x
+    // to call the default function of the recipient.
 
     // Call will mean that this contract is the message sender. The function called must be accessible to
     // this contract.

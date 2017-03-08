@@ -7,24 +7,39 @@ contract Token {
   string public symbol;
   uint8 public decimals;
   uint256 public totalSupply;
+  address public mintController;
   
   // Tracking balances
   mapping (address => uint256) public balanceOf;
 
   // Events.
+  event Mint(address indexed recipient, uint256 amount);
   event Transfer(address indexed from, address indexed to, uint256 amount);
 
   function Token(
       string name,
       string symbol,
       uint8 decimals,
-      uint256 initialSupply)
+      uint256 initialSupply,
+      address mintController)
   {
     balanceOf[msg.sender] = initialSupply;
     totalSupply = initialSupply;
     name = name;
     symbol = symbol;
     decimals = decimals;
+    mintController = mintController;
+    Mint(msg.sender, initialSupply);
+  }
+
+  function mint(address recipient, uint256 amount) returns (bool success) {
+    // Check overflow.
+    if(balanceOf[recipient] + amount < balanceOf[recipient]) throw;
+
+    balanceOf[recipient] += amount;
+    
+    Mint(recipient, amount);
+    return true;
   }
 
   function transfer(address to, uint256 amount) returns (bool success)
